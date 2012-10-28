@@ -1,0 +1,23 @@
+#! /usr/bin/python2.7
+import sys
+import os
+
+from zooker.common import get_changed_files
+
+#Added (A), Copied (C), Deleted (D),
+#Modified (M), Renamed (R), have their type (i.e. regular file,
+#symlink, submodule, ...) changed (T), are Unmerged (U), are Unknown
+#(X), or have had their pairing Broken (B)
+
+
+
+repo = os.getcwd()
+basedir = os.path.join(repo, "..")
+
+line = sys.stdin.read()
+(base, commit, ref) = line.strip().split()
+changes = get_changed_files(base, commit)
+
+if 'M' in changes:
+    for fname in changes['M']:
+        print fname
