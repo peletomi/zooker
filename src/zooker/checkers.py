@@ -4,8 +4,8 @@ import mimetypes
 import re
 
 def is_text(path):
-    known_extensions = ['sql', 'sql_diff', 'properties']
-    known_files = ['.gitignore']
+    known_extensions = ['sql', 'sql_diff', 'properties', 'tex', 'md']
+    known_files = ['.gitignore', 'README']
 
     (mimetype, encoding) = mimetypes.guess_type(path, False)
     if mimetype:

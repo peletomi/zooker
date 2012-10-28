@@ -1,22 +1,45 @@
 #! /usr/bin/python2.7
 import sys
-import os
+import tempfile
+import shutil
 
-from zooker.gitutil import get_changed_files
+from zooker.gitutil import GitRepo, retrieve_changed_files
+from zooker.checkers import WhiteSpaceChecker
 
-#Added (A), Copied (C), Deleted (D),
-#Modified (M), Renamed (R), have their type (i.e. regular file,
-#symlink, submodule, ...) changed (T), are Unmerged (U), are Unknown
-#(X), or have had their pairing Broken (B)
-
-
+tempdir = None
 try:
+    tempdir = tempfile.mkdtemp()
     line = sys.stdin.read()
     (base, commit, ref) = line.strip().split()
-    changes = get_changed_files(base, commit)
 
-    if 'M' in changes:
-        for fname in changes['M']:
-            print fname
+    checkers = [WhiteSpaceChecker()]
+    changes = retrieve_changed_files(tempdir, GitRepo(), base, commit)
+
+    errors = {}
+    for checker in checkers:
+        for change in changes:
+            try:
+                curr_errors = checker.check(change)
+                if curr_errors:
+                    if checker not in errors:
+                        errors[checker] = []
+                    errors[checker].extend(curr_errors)
+            except:
+                if checker not in errors:
+                    errors[checker] = []
+                errors[checker].append('checker [%s] had an unexpected error')
+
+    if errors:
+        print ''
+        for (checker, checker_errors) in errors.iteritems():
+            print '%s %s' % (checker.__class__, checker.get_documentation_url())
+            for error in checker_errors:
+                print '    ' + error
+        print ''
+        sys.exit(1)
+
 except:
     sys.exit(1)
+finally:
+    if tempdir:
+        shutil.rmtree(tempdir)
