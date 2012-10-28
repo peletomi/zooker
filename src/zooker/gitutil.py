@@ -66,13 +66,14 @@ class GitRepo:
         (results, code) = self.__git(('git', 'show', '%s:%s' % (commit, filename)))
         return results
 
-class File:
+class Change:
 
     def __init__(self, repo_path, change_type, temp_path = None):
         self.filename = os.path.basename(repo_path)
         self.repo_path = repo_path
         self.change_type = change_type
         self.temp_path = temp_path
+        self.extension = os.path.splitext(self.filename)
 
 def copy_file_to(basedir, repo, commit, filename):
     contents = repo.get_file_contents(commit, filename)
@@ -94,7 +95,7 @@ def copy_files_to(basedir, repo, commit, filenames):
 def retrieve_changed_files(basedir, repo, base, commit):
     """
     This function retrieves all the changes files in a repository, and copies them to a give
-    base directory (where it makes sense). It returns a list File objects.
+    base directory (where it makes sense). It returns a list Change objects.
     """
     result = []
     changes = repo.get_changed_files(base, commit)
@@ -109,11 +110,11 @@ def retrieve_changed_files(basedir, repo, base, commit):
         if change_type in changes:
             for repo_path in changes[change_type]:
                 temp_path = copy_file_to(basedir, repo, commit, repo_path)
-                result.append(File(repo_path, change_type, temp_path))
+                result.append(Change(repo_path, change_type, temp_path))
 
     for change_type in without_temp_path:
         if change_type in changes:
             for repo_path in changes[change_type]:
-                result.append(File(repo_path, change_type))
+                result.append(Change(repo_path, change_type))
 
     return result
