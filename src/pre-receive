@@ -2,7 +2,7 @@
 import sys
 import os
 
-from zooker.common import get_changed_files
+from zooker.gitutil import get_changed_files
 
 #Added (A), Copied (C), Deleted (D),
 #Modified (M), Renamed (R), have their type (i.e. regular file,
@@ -10,14 +10,13 @@ from zooker.common import get_changed_files
 #(X), or have had their pairing Broken (B)
 
 
+try:
+    line = sys.stdin.read()
+    (base, commit, ref) = line.strip().split()
+    changes = get_changed_files(base, commit)
 
-repo = os.getcwd()
-basedir = os.path.join(repo, "..")
-
-line = sys.stdin.read()
-(base, commit, ref) = line.strip().split()
-changes = get_changed_files(base, commit)
-
-if 'M' in changes:
-    for fname in changes['M']:
-        print fname
+    if 'M' in changes:
+        for fname in changes['M']:
+            print fname
+except:
+    sys.exit(1)
