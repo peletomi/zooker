@@ -10,8 +10,6 @@ from zooker.gitutil import GitRepo, retrieve_changed_files
 from zooker.checkers import create_checkers
 from zooker.config import Config
 
-tempdir = None
-
 def check(checkers):
     errors = {}
     for checker in checkers:
@@ -27,20 +25,27 @@ def check(checkers):
                     errors[checker] = []
                 errors[checker].append('checker [%s] had an unexpected error: %s' % (checker, e.message))
 
-try:
+def get_config():
+    global parser, args, config
     parser = argparse.ArgumentParser(description='Pre receive hook for git repositories.')
     parser.add_argument('--dry-run', action='store_true', default=False, help='only log problems')
-    parser.add_argument('--logfile', default=os.path.join(tempfile.gettempdir(), 'zooker.log'), help='full path of the logfile')
+    parser.add_argument('--logfile', default=os.path.join(tempfile.gettempdir(), 'zooker.log'),
+        help='full path of the logfile')
+    parser.add_argument('-c', '--config', help='path to config file')
     parser.add_argument('base', help='base commit hash')
     parser.add_argument('commit', help='new commit hash')
     parser.add_argument('ref', help='commit ref')
     args = parser.parse_args()
-
-    logging.basicConfig(filename=args.logfile,level=logging.DEBUG)
-
-    config = Config().from_dict({'checkers': { 'WhiteSpaceChecker': '' }}).add_from_default_locations()
+    logging.basicConfig(filename=args.logfile, level=logging.DEBUG)
+    config = Config().from_dict({'checkers': {'WhiteSpaceChecker': ''}}).add_from_default_locations()
     config.add_from_args(args)
+    if args.config:
+        config.add_from_json(args.config)
+    return config
 
+tempdir = None
+try:
+    config = get_config()
     checkers = create_checkers(config)
 
     errors = None

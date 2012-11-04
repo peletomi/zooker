@@ -89,12 +89,27 @@ __checkers = {
     'WhiteSpaceChecker': WhiteSpaceChecker
 }
 def create_checkers(config):
+    """
+    Creates checkers from the config dictionary. The 'list' of checkers is taken from the 'checkers' dict key.
+    The keys in this should be the names of the checkers, the values are the config options passed to the instantiated
+    checker. If the config option is a list, then for each item in the list a checker of that type will be instantiated
+    with the item passed as config value.
+    """
     checkers = []
     if 'checkers' in config:
         for checker_name, checker_config in config['checkers'].iteritems():
             if checker_name in __checkers:
-                ch = __checkers[checker_name]()
-                ch.set_config(checker_config)
-                if ch:
-                    checkers.append(ch)
+                configs = None
+                if type(checker_config) == list:
+                    configs = checker_config
+                else:
+                    configs = [checker_config]
+                for config in configs:
+                    ch = __checkers[checker_name]()
+                    ch.set_config(config)
+                    if ch:
+                        checkers.append(ch)
     return checkers
+
+def list_checkers():
+    return __checkers.values()
