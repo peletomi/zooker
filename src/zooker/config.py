@@ -26,6 +26,7 @@ class Config:
     def add_from_dict(self, data):
         if data and type(data) == dict:
             self.config = dict(self.config.items() + data.items())
+        self.__setattr()
         return self
 
     def add_from_json(self, path):
@@ -33,12 +34,19 @@ class Config:
             with open(path, 'r') as f:
                 from_json = json.load(f)
                 self.config = dict(self.config.items() + from_json.items())
+        self.__setattr()
         return self
 
     def add_from_args(self, args):
         if args:
             self.config = dict(self.config.items() + vars(args).items())
+        self.__setattr()
         return self
+
+    def __setattr(self):
+        for k, v in self.config.iteritems():
+            k = k.replace('-', '_')
+            setattr(self, k, v)
 
     def __getitem__(self, item):
         return self.config[item]

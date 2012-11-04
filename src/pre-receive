@@ -2,19 +2,17 @@
 import sys
 import tempfile
 import shutil
+import argparse
+import os
+import logging
 
 from zooker.gitutil import GitRepo, retrieve_changed_files
-from zooker.checkers import WhiteSpaceChecker
+from zooker.checkers import create_checkers
+from zooker.config import Config
 
 tempdir = None
-try:
-    tempdir = tempfile.mkdtemp()
-    line = sys.stdin.read()
-    (base, commit, ref) = line.strip().split()
 
-    checkers = [WhiteSpaceChecker()]
-    changes = retrieve_changed_files(tempdir, GitRepo(), base, commit)
-
+def check(checkers):
     errors = {}
     for checker in checkers:
         for change in changes:
@@ -24,21 +22,48 @@ try:
                     if checker not in errors:
                         errors[checker] = []
                     errors[checker].extend(curr_errors)
-            except:
+            except Exception as e:
                 if checker not in errors:
                     errors[checker] = []
-                errors[checker].append('checker [%s] had an unexpected error')
+                errors[checker].append('checker [%s] had an unexpected error: %s' % (checker, e.message))
+
+try:
+    parser = argparse.ArgumentParser(description='Pre receive hook for git repositories.')
+    parser.add_argument('--dry-run', action='store_true', default=False, help='only log problems')
+    parser.add_argument('--logfile', default=os.path.join(tempfile.gettempdir(), 'zooker.log'), help='full path of the logfile')
+    parser.add_argument('base', help='base commit hash')
+    parser.add_argument('commit', help='new commit hash')
+    parser.add_argument('ref', help='commit ref')
+    args = parser.parse_args()
+
+    logging.basicConfig(filename=args.logfile,level=logging.DEBUG)
+
+    config = Config().from_dict({'checkers': { 'WhiteSpaceChecker': '' }}).add_from_default_locations()
+    config.add_from_args(args)
+
+    checkers = create_checkers(config)
+
+    errors = None
+    if checkers:
+        tempdir = tempfile.mkdtemp()
+        changes = retrieve_changed_files(tempdir, GitRepo(), config.base, config.commit)
+        errors = check(checkers)
 
     if errors:
-        print ''
+        error_msg = '\n'
         for (checker, checker_errors) in errors.iteritems():
-            print '%s %s' % (checker.get_name(), checker.get_documentation_url())
+            error_msg += '%s %s\n' % (checker.get_name(), checker.get_documentation_url())
             for error in checker_errors:
-                print '    ' + error
-        print ''
-        sys.exit(1)
+                error_msg += '    %s\n' % error
+        error_msg += '\n'
+        logging.error(error_msg)
+        if args.dry_run:
+            error_msg = 'dry run enabled, only logging\n'
+        else:
+            sys.exit(1)
 
-except:
+except Exception as e:
+    logging.error(e.message)
     sys.exit(1)
 finally:
     if tempdir:

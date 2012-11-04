@@ -3,8 +3,6 @@ import os
 import mimetypes
 import re
 
-from zooker.config import Config
-
 def is_text(path):
     known_extensions = ['sql', 'sql_diff', 'properties', 'tex', 'md']
     known_files = ['.gitignore', 'README']
@@ -22,9 +20,6 @@ def is_text(path):
         return True
 
     return False
-
-class CheckerConfig(Config):
-    pass
 
 class Checker:
 
@@ -89,3 +84,17 @@ class WhiteSpaceChecker(Checker):
                 if line.endswith(' ') or line.endswith('\t'):
                     result.append("[%s:%s] trailing whitespace" % (change.filename, i))
         return result
+
+__checkers = {
+    'WhiteSpaceChecker': WhiteSpaceChecker
+}
+def create_checkers(config):
+    checkers = []
+    if 'checkers' in config:
+        for checker_name, checker_config in config['checkers'].iteritems():
+            if checker_name in __checkers:
+                ch = __checkers[checker_name]()
+                ch.set_config(checker_config)
+                if ch:
+                    checkers.append(ch)
+    return checkers
