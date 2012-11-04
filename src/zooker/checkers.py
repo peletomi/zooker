@@ -3,6 +3,8 @@ import os
 import mimetypes
 import re
 
+from zooker.config import Config
+
 def is_text(path):
     known_extensions = ['sql', 'sql_diff', 'properties', 'tex', 'md']
     known_files = ['.gitignore', 'README']
@@ -21,7 +23,13 @@ def is_text(path):
 
     return False
 
+class CheckerConfig(Config):
+    pass
+
 class Checker:
+
+    def set_config(self, config):
+        self.config = config
 
     def get_name(self):
         class_str = str(self.__class__)
