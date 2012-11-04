@@ -1,5 +1,3 @@
-__author__ = 'pele'
-
 import unittest
 
 from zooker.gitutil import GitRepo

@@ -32,7 +32,7 @@ try:
     if errors:
         print ''
         for (checker, checker_errors) in errors.iteritems():
-            print '%s %s' % (checker.__class__, checker.get_documentation_url())
+            print '%s %s' % (checker.get_name(), checker.get_documentation_url())
             for error in checker_errors:
                 print '    ' + error
         print ''

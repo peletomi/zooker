@@ -1,0 +1,2 @@
+#! /bin/sh
+export PYTHONPATH=../src:$PYTHONPATH; nosetests-2.7 .

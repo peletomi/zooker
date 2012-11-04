@@ -23,6 +23,10 @@ def is_text(path):
 
 class Checker:
 
+    def get_name(self):
+        class_str = str(self.__class__)
+        return class_str[class_str.rfind('.') + 1:]
+
     def get_documentation(self):
         return self.__doc__
 
