@@ -47,6 +47,5 @@ class WhiteSpaceCheckerTest(unittest.TestCase):
 \tbad
   and that too """)
         self.assertEquals(['[multiple.txt:1] empty line with whitespace',
-                           '[multiple.txt:3] empty line with whitespace',
                            '[multiple.txt:4] tabs',
                            '[multiple.txt:5] trailing whitespace'], self.checker.check(change))

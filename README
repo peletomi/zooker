@@ -1,1 +1,5 @@
 Python library for use in git hooks.
+
+To try locally (with console output):
+
+  ./src/pre-receive 53d47 f8c2f 12 -vv --logfile=-

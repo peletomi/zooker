@@ -1,3 +1,4 @@
+import logging
 import os
 import subprocess
 
@@ -8,11 +9,11 @@ class GitRepo:
 
     def __init__(self, **kwargs):
         environ = os.environ.copy()
-        if 'GIT_DIR' not in environ:
+        if not environ.get('GIT_DIR'):
             if 'repo' in kwargs:
                 repo = kwargs['repo']
             else:
-                repo = os.path.join(os.path.dirname(__file__), '..', '..')
+                repo = '.git'
             environ['GIT_DIR'] = os.path.abspath(repo)
 
         if 'work' in kwargs:
@@ -55,15 +56,20 @@ class GitRepo:
         return result
 
     def __git(self, args):
-        proc = subprocess.Popen(args, stdout=subprocess.PIPE, env=self.__environ)
-        return proc.communicate()
+        logging.debug(args)
+        try:
+            results = subprocess.check_output(args.split(), stderr=subprocess.STDOUT, env=self.__environ)
+        except subprocess.CalledProcessError as e:
+            logging.exception('Output was: %s', e.output)
+            raise
+        return results
 
     def get_changed_files(self, base, commit, **kw):
-        (results, code) = self.__git(('git', 'diff', '--name-status', "%s..%s" % (base, commit)), **kw)
+        results = self.__git('git diff --name-status %s..%s' % (base, commit))
         return self.parse_changes(results)
 
     def get_file_contents(self, commit, filename):
-        (results, code) = self.__git(('git', 'show', '%s:%s' % (commit, filename)))
+        results = self.__git('git show %s:%s' % (commit, filename))
         return results
 
 class Change:
@@ -74,6 +80,9 @@ class Change:
         self.change_type = change_type
         self.temp_path = temp_path
         self.extension = os.path.splitext(self.filename)
+
+    def __str__(self):
+        return '%s %s' % (self.change_type, self.repo_path)
 
 def copy_file_to(basedir, repo, commit, filename):
     contents = repo.get_file_contents(commit, filename)

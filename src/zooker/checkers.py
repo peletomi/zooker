@@ -1,10 +1,12 @@
 
+import logging
 import os
 import mimetypes
 import re
+import subprocess
 
 def is_text(path):
-    known_extensions = ['sql', 'sql_diff', 'properties', 'tex', 'md']
+    known_extensions = ['sql', 'sql_diff', 'properties', 'tex', 'md', 'py']
     known_files = ['.gitignore', 'README']
 
     (mimetype, encoding) = mimetypes.guess_type(path, False)
@@ -27,8 +29,7 @@ class Checker:
         self.config = config
 
     def get_name(self):
-        class_str = str(self.__class__)
-        return class_str[class_str.rfind('.') + 1:]
+        return self.__class__.__name__
 
     def get_documentation(self):
         return self.__doc__
@@ -50,11 +51,27 @@ class Checker:
 
     def check(self, change):
         if change and self.matches(change):
+            logging.debug('%s checking %s', self.__class__.__name__, change.repo_path)
             result = self.do_check(change)
             if result:
                 return result
 
         return []
+
+class CodeValidatorChecker(Checker):
+
+    def matches(self, change):
+        return change.temp_path
+
+    def do_check(self, change):
+        args = 'codevalidator.py -v %s' % change.temp_path
+        results = []
+        proc = subprocess.Popen(args.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        out, stderr = proc.communicate()
+        if out:
+            results.append(out.rstrip())
+        return results
+
 
 class WhiteSpaceChecker(Checker):
     """
@@ -76,16 +93,18 @@ class WhiteSpaceChecker(Checker):
         with open(change.temp_path, 'r') as f:
             i = 0
             for line in f:
+                line = line.rstrip('\n')
                 i += 1
                 if self.empty_line.match(line):
                     result.append("[%s:%s] empty line with whitespace" % (change.filename, i))
-                if  line.find('\t') > -1:
-                    result.append("[%s:%s] tabs" % (change.filename, i))
-                if line.endswith(' ') or line.endswith('\t'):
+                elif line.endswith(' ') or line.endswith('\t'):
                     result.append("[%s:%s] trailing whitespace" % (change.filename, i))
+                if line.find('\t') > -1:
+                    result.append("[%s:%s] tabs" % (change.filename, i))
         return result
 
 __checkers = {
+    'CodeValidatorChecker': CodeValidatorChecker,
     'WhiteSpaceChecker': WhiteSpaceChecker
 }
 def create_checkers(config):

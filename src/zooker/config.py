@@ -3,8 +3,9 @@ import os
 
 class Config:
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.config = dict()
+        self.config.update(kwargs)
 
     @classmethod
     def from_dict(cls, defaults):
@@ -25,8 +26,7 @@ class Config:
 
     def add_from_dict(self, data):
         if data and type(data) == dict:
-            self.config = dict(self.config.items() + data.items())
-        self.__setattr()
+            self.config.update(data)
         return self
 
     def add_from_json(self, path):
@@ -34,22 +34,21 @@ class Config:
             with open(path, 'r') as f:
                 from_json = json.load(f)
                 self.config = dict(self.config.items() + from_json.items())
-        self.__setattr()
         return self
 
     def add_from_args(self, args):
         if args:
-            self.config = dict(self.config.items() + vars(args).items())
-        self.__setattr()
+            self.config.update(vars(args))
         return self
 
-    def __setattr(self):
-        for k, v in self.config.iteritems():
-            k = k.replace('-', '_')
-            setattr(self, k, v)
+    def get(self, key, default=None):
+        return self.config.get(key, self.config.get(key.replace('_', '-'), default))
+
+    def __getattr__(self, item):
+        return self.get(item)
 
     def __getitem__(self, item):
-        return self.config[item]
+        return self.get(item)
 
     def __contains__(self, item):
         return item in self.config
