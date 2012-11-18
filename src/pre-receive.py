@@ -1,4 +1,6 @@
-#! /usr/bin/python2.7
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import sys
 import tempfile
 import shutil
@@ -12,6 +14,7 @@ from zooker.config import Config
 
 LOG_CONSOLE_FORMAT = '%(asctime)-15s %(levelname)s %(name)s: %(message)s'
 
+
 def check(checkers):
     errors = {}
     for checker in checkers:
@@ -22,18 +25,19 @@ def check(checkers):
                     if checker not in errors:
                         errors[checker] = []
                     errors[checker].extend(curr_errors)
-            except Exception as e:
+            except Exception, e:
                 if checker not in errors:
                     errors[checker] = []
                 errors[checker].append('checker [%s] had an unexpected error: %s' % (checker, e))
     return errors
+
 
 def get_config():
     global parser, args, config
     parser = argparse.ArgumentParser(description='Pre receive hook for git repositories.')
     parser.add_argument('--dry-run', action='store_true', default=False, help='only log problems')
     parser.add_argument('--logfile', default=os.path.join(tempfile.gettempdir(), 'zooker.log'),
-        help='full path of the logfile')
+                        help='full path of the logfile')
     parser.add_argument('-c', '--config', help='path to config file')
     parser.add_argument('-v', '--verbose', action='count', help='verbose logging (-vv to be more verbose)', default=0)
     parser.add_argument('base', help='base commit hash')
@@ -51,11 +55,12 @@ def get_config():
         config.add_from_json(args.config)
     return config
 
+
 tempdir = None
 try:
     config = get_config()
     checkers = create_checkers(config)
-    logging.debug('Using %s', ', '.join([ c.get_name() for c in checkers ]))
+    logging.debug('Using %s', ', '.join([c.get_name() for c in checkers]))
 
     errors = None
     if checkers:
@@ -66,7 +71,7 @@ try:
 
     if errors:
         error_msg = '\n'
-        for (checker, checker_errors) in errors.iteritems():
+        for checker, checker_errors in errors.iteritems():
             error_msg += '%s %s\n' % (checker.get_name(), checker.get_documentation_url())
             for error in checker_errors:
                 error_msg += '    %s\n' % error
@@ -75,8 +80,8 @@ try:
             error_msg = 'dry run enabled, only logging\n'
         else:
             sys.exit(1)
+except Exception, e:
 
-except Exception as e:
     logging.exception('Unknown error in pre-receive hook')
     sys.exit(1)
 finally:
