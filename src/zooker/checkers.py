@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import logging
 import os
@@ -5,11 +7,19 @@ import mimetypes
 import re
 import subprocess
 
+
 def is_text(path):
-    known_extensions = ['sql', 'sql_diff', 'properties', 'tex', 'md', 'py']
+    known_extensions = [
+        'sql',
+        'sql_diff',
+        'properties',
+        'tex',
+        'md',
+        'py',
+    ]
     known_files = ['.gitignore', 'README']
 
-    (mimetype, encoding) = mimetypes.guess_type(path, False)
+    mimetype, encoding = mimetypes.guess_type(path, False)
     if mimetype:
         return 'text' in mimetype or 'xml' in mimetype
 
@@ -22,6 +32,7 @@ def is_text(path):
         return True
 
     return False
+
 
 class Checker:
 
@@ -41,12 +52,14 @@ class Checker:
         """
         Returns true if the checker is able to handle this type of change.
         """
+
         return False
 
     def do_check(self, change):
         """
         Returns a list of strings describing the errors, otherwise returns an empty list.
         """
+
         return []
 
     def check(self, change):
@@ -57,6 +70,7 @@ class Checker:
                 return result
 
         return []
+
 
 class CodeValidatorChecker(Checker):
 
@@ -74,6 +88,7 @@ class CodeValidatorChecker(Checker):
 
 
 class WhiteSpaceChecker(Checker):
+
     """
     This checker verifies common whitespace problems:
 
@@ -96,17 +111,17 @@ class WhiteSpaceChecker(Checker):
                 line = line.rstrip('\n')
                 i += 1
                 if self.empty_line.match(line):
-                    result.append("[%s:%s] empty line with whitespace" % (change.filename, i))
+                    result.append('[%s:%s] empty line with whitespace' % (change.filename, i))
                 elif line.endswith(' ') or line.endswith('\t'):
-                    result.append("[%s:%s] trailing whitespace" % (change.filename, i))
+                    result.append('[%s:%s] trailing whitespace' % (change.filename, i))
                 if line.find('\t') > -1:
-                    result.append("[%s:%s] tabs" % (change.filename, i))
+                    result.append('[%s:%s] tabs' % (change.filename, i))
         return result
 
-__checkers = {
-    'CodeValidatorChecker': CodeValidatorChecker,
-    'WhiteSpaceChecker': WhiteSpaceChecker
-}
+
+__checkers = {'CodeValidatorChecker': CodeValidatorChecker, 'WhiteSpaceChecker': WhiteSpaceChecker}
+
+
 def create_checkers(config):
     """
     Creates checkers from the config dictionary. The 'list' of checkers is taken from the 'checkers' dict key.
@@ -114,6 +129,7 @@ def create_checkers(config):
     checker. If the config option is a list, then for each item in the list a checker of that type will be instantiated
     with the item passed as config value.
     """
+
     checkers = []
     if 'checkers' in config:
         for checker_name, checker_config in config['checkers'].iteritems():
@@ -130,5 +146,8 @@ def create_checkers(config):
                         checkers.append(ch)
     return checkers
 
+
 def list_checkers():
     return __checkers.values()
+
+

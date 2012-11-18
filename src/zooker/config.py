@@ -1,5 +1,9 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import json
 import os
+
 
 class Config:
 
@@ -55,3 +59,5 @@ class Config:
 
     def __len__(self):
         return len(self.config)
+
+

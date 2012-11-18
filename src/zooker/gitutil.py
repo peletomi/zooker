@@ -1,8 +1,13 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import logging
 import os
 import subprocess
 
+
 class GitRepo:
+
     """
     This class is used to abstract away the git repository. Making it possible to mock it in the unit tests.
     """
@@ -42,6 +47,7 @@ class GitRepo:
         More info in the help of git diff - diff-filter argument.
         The result is parsed and returned as a map(letter -> file path).
         """
+
         result = {}
         if not git_stdout:
             return result
@@ -59,7 +65,7 @@ class GitRepo:
         logging.debug(args)
         try:
             results = subprocess.check_output(args.split(), stderr=subprocess.STDOUT, env=self.__environ)
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError, e:
             logging.exception('Output was: %s', e.output)
             raise
         return results
@@ -72,9 +78,10 @@ class GitRepo:
         results = self.__git('git show %s:%s' % (commit, filename))
         return results
 
+
 class Change:
 
-    def __init__(self, repo_path, change_type, temp_path = None):
+    def __init__(self, repo_path, change_type, temp_path=None):
         self.filename = os.path.basename(repo_path)
         self.repo_path = repo_path
         self.change_type = change_type
@@ -83,6 +90,7 @@ class Change:
 
     def __str__(self):
         return '%s %s' % (self.change_type, self.repo_path)
+
 
 def copy_file_to(basedir, repo, commit, filename):
     contents = repo.get_file_contents(commit, filename)
@@ -94,26 +102,42 @@ def copy_file_to(basedir, repo, commit, filename):
         f.write(contents)
     return name
 
+
 def copy_files_to(basedir, repo, commit, filenames):
     """
     This function copies all the files from the given commit to a specified base directory.
     It will create the folder hierarchy of the files as well.
     """
+
     return map(lambda f: copy_file_to(basedir, repo, commit, f), filenames)
+
 
 def retrieve_changed_files(basedir, repo, base, commit):
     """
     This function retrieves all the changes files in a repository, and copies them to a give
     base directory (where it makes sense). It returns a list Change objects.
     """
+
     result = []
     changes = repo.get_changed_files(base, commit)
 
     if not changes:
         return result
 
-    with_temp_path = ['A', 'C', 'M', 'R', 'T']
-    without_temp_path = ['D', 'T', 'U', 'X', 'B']
+    with_temp_path = [
+        'A',
+        'C',
+        'M',
+        'R',
+        'T',
+    ]
+    without_temp_path = [
+        'D',
+        'T',
+        'U',
+        'X',
+        'B',
+    ]
 
     for change_type in with_temp_path:
         if change_type in changes:
@@ -127,3 +151,5 @@ def retrieve_changed_files(basedir, repo, base, commit):
                 result.append(Change(repo_path, change_type))
 
     return result
+
+
